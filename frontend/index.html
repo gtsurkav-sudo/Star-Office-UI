@@ -230,11 +230,13 @@
         }
         #asset-drawer-body {
             padding: 10px;
-            padding-bottom: 150px;
             overflow: auto;
             color: #e5e7eb;
             font-size: 12px;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
         .asset-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
         .asset-toolbar input { flex:1; min-width: 150px; padding:6px 8px; border-radius:6px; border:1px solid rgba(148, 163, 184, 0.22); background:#1f2937; color:#fff; }
@@ -246,7 +248,7 @@
             gap:6px;
             flex: 1 1 auto;
             min-height: 120px;
-            max-height: 40vh;
+            max-height: none;
             overflow-y: auto;
             padding-right: 2px;
             scrollbar-color: #1f2937 #0b1220;
@@ -256,13 +258,15 @@
         #asset-list::-webkit-scrollbar-track { background: #0b1220; }
         #asset-list::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 0; border: 1px solid #111827; }
         #asset-upload-panel {
-            position: fixed !important;
-            right: max(8px, env(safe-area-inset-right, 0px));
-            bottom: max(8px, env(safe-area-inset-bottom, 0px));
-            width: 304px;
-            max-width: calc(100vw - 16px);
+            position: sticky;
+            left: 8px;
+            right: 8px;
+            width: auto;
+            max-width: none;
             box-sizing: border-box;
-            margin-top: 0;
+            margin-top: 10px;
+            margin-bottom: 0;
+            bottom: 8px;
             background: rgba(11, 18, 32, 0.96);
             border: 1px solid rgba(71, 85, 105, 0.75);
             border-radius: 10px;
@@ -1041,10 +1045,11 @@
             .asset-path { font-size: 11px; line-height: 1.3; }
             .asset-sub { font-size: 10px; }
             #asset-upload-panel {
-                right: max(8px, env(safe-area-inset-right, 0px));
-                bottom: max(8px, env(safe-area-inset-bottom, 0px));
-                width: min(304px, calc(100vw - 16px));
-                max-width: calc(100vw - 16px);
+                left: 8px;
+                right: 8px;
+                width: auto;
+                max-width: none;
+                bottom: 8px;
                 padding: 8px;
             }
             .asset-upload-grid {
@@ -1181,7 +1186,7 @@
                     </details>
                 </div>
 
-                <div id="asset-manual-panel">
+                <div id="asset-manual-panel" style="display:flex; flex-direction:column; flex:1; min-height:0;">
                     <div class="asset-toolbar">
                         <input id="asset-search" placeholder="搜索资产名（如 desk / sofa / star）" oninput="renderAssetDrawerList()" />
                     </div>
