@@ -462,6 +462,7 @@ function create() {
     'flowers',
     randomFlowerFrame
   ).setOrigin(LAYOUT.furniture.flower.origin.x, LAYOUT.furniture.flower.origin.y);
+  flower.setScale(LAYOUT.furniture.flower.scale || 1);
   flower.setDepth(LAYOUT.furniture.flower.depth);
   flower.setInteractive({ useHandCursor: true });
   window.flowerSprite = flower;
