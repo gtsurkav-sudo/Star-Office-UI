@@ -490,9 +490,9 @@ def normalize_agent_state(s):
 
 # User-facing model aliases -> provider model ids
 USER_MODEL_TO_PROVIDER_MODELS = {
+    # 严格按用户要求：仅两种官方模型映射
     "nanobanana-pro": [
         "nano-banana-pro-preview",
-        "gemini-3-pro-image-preview",
     ],
     "nanobanana-2": [
         "gemini-2.5-flash-image",
@@ -569,6 +569,10 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         gen_width, gen_height = width, height
         ref_width, ref_height = width, height
 
+    # 同时规避可能触发 400 的特殊能力参数：
+    # 仅 nanobanana-2 走 aspect-ratio，nanobanana-pro 交给模型默认比例（后续再标准化到 1280x720）
+    allow_aspect_ratio = (preferred_user_model == "nanobanana-2")
+
     prompt = (
         "Use a top-down pixel room composition compatible with an office game scene. "
         "STRICTLY preserve the same room geometry, camera angle, wall/floor boundaries and major object placement as the provided reference image. "
@@ -582,11 +586,12 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         GEMINI_PYTHON,
         GEMINI_SCRIPT,
         "--prompt", prompt,
-        "--aspect-ratio", "16:9",
-        "--model", selected_model,
+        "--model", configured_user_model,
         "--out-dir", tmp_dir,
         "--cleanup",
     ]
+    if allow_aspect_ratio:
+        cmd.extend(["--aspect-ratio", "16:9"])
 
     # 强约束：每次都带固定参考图，保持房间区域布局不漂移
     ref_for_call = None
@@ -621,6 +626,7 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
             or ("model is not available" in low)
             or ("configured model is not available" in low)
             or ("this model is not available" in low)
+            or ("not supported for generatecontent" in low)
         )
 
     def _with_model(cmd_args, model_name: str):
