@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star 的像素办公室</title>
+    <title>Пиксельный офис Claw</title>
     <style>
         @font-face {
             font-family: 'ArkPixel';
@@ -1285,12 +1285,13 @@
         <button id="lang-btn-en" onclick="setUILanguage('en')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">EN</button>
         <button id="lang-btn-jp" onclick="setUILanguage('ja')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">JP</button>
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">CN</button>
+        <button id="lang-btn-ru" onclick="setUILanguage('ru')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">RU</button>
     </div>
 
     <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
-        let uiLang = localStorage.getItem('uiLang') || 'en';
+        let uiLang = localStorage.getItem('uiLang') || 'ru';
         const I18N = {
             zh: {
                 controlTitle: 'Star 状态',
@@ -1375,7 +1376,35 @@
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
                 memoTitle: '昨日のメモ', guestTitle: '訪問者リスト', officeTitle: 'ハイシン・ロブスターのオフィス',
                 loadingOffice: 'Star のピクセルオフィスを読み込み中...'
-            }
+            },
+            ru: {
+                controlTitle: 'Claw Статус',
+                btnIdle: 'Ожидание', btnWork: 'Работа', btnSync: 'Синхр.', btnError: 'Ошибка', btnDecor: 'Декор комнаты',
+                drawerTitle: 'Декор комнаты · Панель ассетов', drawerClose: 'Закрыть',
+                authTitle: 'Введите код доступа', authPlaceholder: 'Введите код', authVerify: 'Войти', authDefaultPassHint: 'Код по умолчанию: 1234 (можно сменить на более надёжный)',
+                drawerVisibilityTip: 'Видимость: нажмите иконку глаза справа, чтобы скрыть/показать ассет',
+                hideDrawer: '👁 Скрыть панель', showDrawer: '👁 Показать панель',
+                assetHide: 'Скрыть', assetShow: 'Показать',
+                resetToDefault: 'Сбросить к стандартному', restorePrevAsset: 'Предыдущая версия',
+                btnMove: '📦 Новый дом', btnHome: '🐚 Домой', btnHomeLast: '↩️ Предыдущий', btnHomeFavorite: '⭐ Сохранить дом', btnBroker: '🤝 Дизайнер', btnDIY: '🪚 Своими руками', btnBrokerGo: 'По плану дизайнера',
+                homeFavTitle: '🏠 Сохранённые дома', homeFavEmpty: 'Нет сохранённых. Нажми «⭐ Сохранить дом».', homeFavApply: 'Применить к карте', homeFavDelete: 'Удалить', homeFavSaved: '✅ Карта сохранена', homeFavApplied: '✅ Сохранённый дом применён', homeFavDeleted: '🗑️ Сохранённый дом удалён',
+                brokerHint: 'Какой стиль комнаты ты хочешь?',
+                brokerPromptPh: 'Пример: киберпанк Токио, стиль Моне, подземелье, космическая станция...',
+                brokerNeedPrompt: 'Сначала опиши стиль для дизайнера',
+                brokerGenerating: '🏘️ Генерирую фон по плану дизайнера, подожди (20-90 сек)...',
+                brokerDone: '✅ Фон по плану дизайнера создан и применён, обновляю комнату...',
+                moveSuccess: '✅ Переезд успешен!',
+                brokerMissingKey: '❌ Ошибка генерации: нет GEMINI API Key. Заполни ниже и сохрани.',
+                geminiPanelTitle: '🔐 Настройки API (сворачиваемое)', geminiHint: 'Опционально: API Key для генерации изображений (без него базовые функции работают)', geminiApiDoc: '📘 Как получить Google API Key', geminiInputPh: 'Вставь GEMINI_API_KEY (ввод скрыт)', geminiSaveKey: 'Сохранить Key', geminiMaskNoKey: 'Сейчас: ключ не настроен', geminiMaskHasKey: 'Настроенный ключ:',
+                speedModeLabel: 'Режим генерации', speedFast: '🍌2', speedQuality: '🍌Pro',
+                searchPlaceholder: 'Поиск ассетов (desk / sofa / star)', loaded: 'Загружено', allAssets: 'Все ассеты',
+                chooseImage: 'Загрузить файл', confirmUpload: 'Применить', resetToDefault: 'Сброс', restorePrevAsset: 'Откатить', uploadPending: 'Ожидает загрузки', uploadTarget: 'Цель',
+                assetHintNotInScene: 'Объект не найден в текущей сцене, но файл можно заменить (применится после обновления)',
+                assetHintDefault: 'Стандартный ассет: сохраняй оригинальный размер, прозрачность и центр тяжести',
+                showCoords: 'Координаты', hideCoords: 'Скрыть коорд.', moveView: 'Двигать вид', lockView: 'Зафиксировать',
+                memoTitle: 'ВЧЕРАШНИЕ ЗАМЕТКИ', guestTitle: 'СПИСОК ГОСТЕЙ', officeTitle: 'Пиксельный офис JOJI',
+                loadingOffice: 'Загружаю пиксельный офис Claw...'
+            },
         };
 
         function t(key) { return (I18N[uiLang] && I18N[uiLang][key]) || key; }
@@ -1407,7 +1436,8 @@
             const langButtons = [
                 { id: 'lang-btn-en', lang: 'en' },
                 { id: 'lang-btn-jp', lang: 'ja' },
-                { id: 'lang-btn-cn', lang: 'zh' }
+                { id: 'lang-btn-cn', lang: 'zh' },
+                { id: 'lang-btn-ru', lang: 'ru' }
             ];
             langButtons.forEach(({ id, lang }) => {
                 const el = document.getElementById(id);
@@ -1476,7 +1506,7 @@
         }
 
         function setUILanguage(lang) {
-            if (!['zh', 'en', 'ja'].includes(lang)) return;
+            if (!['zh', 'en', 'ja', 'ru'].includes(lang)) return;
             uiLang = lang;
             localStorage.setItem('uiLang', uiLang);
             applyLanguage();
