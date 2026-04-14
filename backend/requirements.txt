@@ -1,2 +1,4 @@
 flask==3.0.2
 pillow==10.4.0
+python-telegram-bot==21.6
+requests>=2.31.0
