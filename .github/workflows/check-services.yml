@@ -1,0 +1,109 @@
+name: "🏢 Проверка сервисов Star-Office"
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:  # ручной запуск из GitHub UI
+
+jobs:
+  check-services:
+    name: "Статус сервисов на Mac"
+    runs-on: self-hosted
+
+    steps:
+      - name: "📋 Проверка launchd-сервисов"
+        run: |
+          echo "========================================"
+          echo "  Star-Office — Статус сервисов"
+          echo "  $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "========================================"
+          echo ""
+
+          SERVICES=(
+            "com.staroffice.gateway:OpenClaw Gateway:18790"
+            "com.staroffice.backend:Star-Office Backend:19000"
+            "com.staroffice.telegram:Telegram-бот:"
+          )
+
+          ALL_OK=true
+
+          for ENTRY in "${SERVICES[@]}"; do
+            IFS=':' read -r LABEL NAME PORT <<< "$ENTRY"
+
+            echo "--- $NAME ($LABEL) ---"
+
+            # Проверка launchd
+            if launchctl list "$LABEL" &>/dev/null; then
+              PID=$(launchctl list "$LABEL" 2>/dev/null | awk 'NR==2{print $1}')
+              EXIT_CODE=$(launchctl list "$LABEL" 2>/dev/null | awk 'NR==2{print $2}')
+              if [ "$PID" != "-" ] && [ -n "$PID" ]; then
+                echo "  ✅ launchd: запущен (PID $PID)"
+              else
+                echo "  ⚠️  launchd: зарегистрирован, но не запущен (exit: $EXIT_CODE)"
+                ALL_OK=false
+              fi
+            else
+              echo "  ❌ launchd: не зарегистрирован"
+              ALL_OK=false
+            fi
+
+            # Проверка порта (если есть)
+            if [ -n "$PORT" ]; then
+              if curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/health" 2>/dev/null | grep -q "200"; then
+                echo "  ✅ HTTP :$PORT — отвечает"
+              elif lsof -i ":$PORT" -sTCP:LISTEN &>/dev/null; then
+                echo "  ✅ Порт $PORT — слушает"
+              else
+                echo "  ❌ Порт $PORT — не отвечает"
+                ALL_OK=false
+              fi
+            fi
+
+            echo ""
+          done
+
+          # Логи (последние 5 строк)
+          echo "--- Последние логи ---"
+          for LOG in /tmp/openclaw-gateway.log /tmp/staroffice-backend.log /tmp/staroffice-telegram.log; do
+            if [ -f "$LOG" ]; then
+              echo ""
+              echo "📄 $(basename $LOG):"
+              tail -3 "$LOG" 2>/dev/null || echo "  (пусто)"
+            fi
+          done
+
+          echo ""
+          echo "========================================"
+          if [ "$ALL_OK" = true ]; then
+            echo "  ✅ Все сервисы работают"
+          else
+            echo "  ⚠️  Есть проблемы — см. выше"
+            exit 1
+          fi
+          echo "========================================"
+
+      - name: "🔄 Подтянуть обновления"
+        run: |
+          cd ~/projects/Star-Office-UI
+          git fetch origin
+          git pull origin master --ff-only 2>/dev/null || echo "⚠️ pull не удался (возможно локальные изменения)"
+
+      - name: "♻️ Перезапуск сервисов (если нужно)"
+        if: always()
+        run: |
+          # Перезапускаем backend чтобы подхватить изменения
+          # (Flask кеширует index.html)
+          if launchctl list "com.staroffice.backend" &>/dev/null; then
+            launchctl stop com.staroffice.backend
+            sleep 2
+            launchctl start com.staroffice.backend
+            echo "✅ Backend перезапущен"
+          fi
+
+          # Перезапускаем telegram-бота
+          if launchctl list "com.staroffice.telegram" &>/dev/null; then
+            launchctl stop com.staroffice.telegram
+            sleep 1
+            launchctl start com.staroffice.telegram
+            echo "✅ Telegram-бот перезапущен"
+          fi
