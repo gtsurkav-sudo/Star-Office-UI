@@ -12,6 +12,9 @@ import os
 import sys
 import logging
 import json
+import subprocess
+import asyncio
+import shutil
 from datetime import datetime
 
 import requests
@@ -32,6 +35,8 @@ TELEGRAM_BOT_TOKEN = os.environ.get(
     "8693039013:AAEU6oRcR8S_LZ2DILeyw9C18pw1EfxdAGU",
 )
 OFFICE_API_URL = os.environ.get("OFFICE_API_URL", "http://127.0.0.1:19000")
+OPENCLAW_GATEWAY_URL = os.environ.get("OPENCLAW_GATEWAY_URL", "http://127.0.0.1:18790")
+OPENCLAW_HOME = os.environ.get("OPENCLAW_HOME", os.path.expanduser("~/.openclaw-claw"))
 
 # Ограничение доступа (пустой список = доступ для всех)
 # Заполни свой Telegram user ID для безопасности
@@ -112,9 +117,12 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/status — текущее состояние офиса\n"
         "/agents — список агентов\n"
         "/set — сменить состояние\n"
+        "/chat <текст> — написать агенту Claw\n"
+        "/claw_status — статус OpenClaw Gateway\n"
         "/memo — дневник за вчера\n"
         "/health — проверка здоровья сервера\n"
-        "/help — эта справка"
+        "/help — эта справка\n\n"
+        "💬 Или просто напиши сообщение — оно уйдёт в claw-main."
     )
     await update.message.reply_text(text)
 
@@ -272,6 +280,193 @@ async def cmd_health(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🟡 Статус: {status}\n🕐 {ts}")
 
 
+# ─── OpenClaw команды ────────────────────────────────────────────────────────
+
+
+def openclaw_cli_available() -> bool:
+    """Проверяет наличие openclaw CLI."""
+    return shutil.which("openclaw") is not None
+
+
+async def run_openclaw_agent(message: str, agent: str = "claw-main", timeout: int = 120) -> str:
+    """Отправить сообщение агенту через openclaw CLI."""
+    env = os.environ.copy()
+    env["OPENCLAW_HOME"] = OPENCLAW_HOME
+
+    cmd = [
+        "openclaw", "agent",
+        "--agent", agent,
+        "--message", message,
+        "--json",
+    ]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+
+        if proc.returncode != 0:
+            err = stderr.decode("utf-8", errors="replace").strip()
+            log.error("openclaw agent error: %s", err)
+            return f"❌ Ошибка OpenClaw: {err[:500]}"
+
+        raw = stdout.decode("utf-8", errors="replace").strip()
+
+        # Парсим JSON-ответ
+        try:
+            data = json.loads(raw)
+            # openclaw agent --json возвращает поле result или output
+            reply = (
+                data.get("result")
+                or data.get("output")
+                or data.get("text")
+                or data.get("content")
+                or raw
+            )
+            if isinstance(reply, list):
+                reply = "\n".join(str(item) for item in reply)
+            return str(reply).strip() or "(пустой ответ)"
+        except json.JSONDecodeError:
+            # Не JSON — возвращаем как текст
+            return raw[:4000] if raw else "(пустой ответ)"
+
+    except asyncio.TimeoutError:
+        return "⏳ Агент не ответил за 2 минуты. Попробуй позже."
+    except FileNotFoundError:
+        return "❌ openclaw CLI не найден. Установи: npm install -g openclaw@latest"
+    except Exception as e:
+        log.error("openclaw agent exception: %s", e)
+        return f"❌ Ошибка: {e}"
+
+
+async def cmd_claw_status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Статус OpenClaw Gateway."""
+    if not check_access(update):
+        await update.message.reply_text("⛔ Доступ запрещён.")
+        return
+
+    lines = ["🔧 OpenClaw Gateway\n"]
+
+    # 1. Проверяем HTTP health
+    gw_health = None
+    try:
+        r = requests.get(f"{OPENCLAW_GATEWAY_URL}/health", timeout=3)
+        gw_health = r.json() if r.status_code == 200 else None
+    except Exception:
+        pass
+
+    if gw_health:
+        lines.append(f"🟢 Gateway: работает")
+        lines.append(f"🌐 {OPENCLAW_GATEWAY_URL}")
+        if "version" in gw_health:
+            lines.append(f"📦 Версия: {gw_health['version']}")
+    else:
+        # Проверяем через /status
+        gw_status = None
+        try:
+            r = requests.get(f"{OPENCLAW_GATEWAY_URL}/status", timeout=3)
+            gw_status = r.json() if r.status_code == 200 else None
+        except Exception:
+            pass
+
+        if gw_status:
+            lines.append("🟢 Gateway: работает")
+            lines.append(f"🌐 {OPENCLAW_GATEWAY_URL}")
+        else:
+            lines.append("🔴 Gateway: не отвечает")
+            lines.append(f"🌐 {OPENCLAW_GATEWAY_URL}")
+
+    # 2. CLI
+    if openclaw_cli_available():
+        lines.append("✅ CLI: openclaw найден")
+    else:
+        lines.append("⚠️ CLI: openclaw не в PATH")
+
+    # 3. Конфиг
+    config_path = os.path.join(OPENCLAW_HOME, "openclaw.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as f:
+                cfg = json.load(f)
+            port = cfg.get("gateway", {}).get("port", "?")
+            agents = cfg.get("agents", {}).get("list", [])
+            lines.append(f"📁 Конфиг: {config_path}")
+            lines.append(f"🚪 Порт: {port}")
+            lines.append(f"\n🤖 Агенты OpenClaw:")
+            for a in agents:
+                aid = a.get("id", "?")
+                name = a.get("name", aid)
+                model = a.get("model", {}).get("primary", "?")
+                default = " ⭐" if a.get("default") else ""
+                lines.append(f"  • {name} ({aid}) — {model}{default}")
+        except Exception as e:
+            lines.append(f"⚠️ Ошибка чтения конфига: {e}")
+    else:
+        lines.append(f"⚠️ Конфиг не найден: {config_path}")
+
+    await update.message.reply_text("\n".join(lines))
+
+
+async def cmd_chat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Отправить сообщение агенту claw-main через OpenClaw."""
+    if not check_access(update):
+        await update.message.reply_text("⛔ Доступ запрещён.")
+        return
+
+    # Текст после /chat
+    user_msg = update.message.text
+    if user_msg:
+        # Убираем /chat и /chat@botname
+        parts = user_msg.split(None, 1)
+        user_msg = parts[1] if len(parts) > 1 else ""
+    else:
+        user_msg = ""
+
+    if not user_msg.strip():
+        await update.message.reply_text(
+            "💬 Использование: /chat <сообщение>\n\n"
+            "Пример: /chat Привет, что ты умеешь?"
+        )
+        return
+
+    # Индикатор «печатает»
+    await update.message.chat.send_action("typing")
+
+    reply = await run_openclaw_agent(user_msg, agent="claw-main")
+
+    # Telegram лимит 4096 символов
+    if len(reply) > 4000:
+        # Отправляем частями
+        for i in range(0, len(reply), 4000):
+            chunk = reply[i:i + 4000]
+            await update.message.reply_text(chunk)
+    else:
+        await update.message.reply_text(f"🤖 Claw Main:\n\n{reply}")
+
+
+async def handle_text_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Любое текстовое сообщение (без команды) отправляется в claw-main."""
+    if not check_access(update):
+        return
+
+    user_msg = update.message.text
+    if not user_msg or not user_msg.strip():
+        return
+
+    await update.message.chat.send_action("typing")
+    reply = await run_openclaw_agent(user_msg, agent="claw-main")
+
+    if len(reply) > 4000:
+        for i in range(0, len(reply), 4000):
+            await update.message.reply_text(reply[i:i + 4000])
+    else:
+        await update.message.reply_text(f"🤖 Claw Main:\n\n{reply}")
+
+
 # ─── Регистрация команд в меню Telegram ──────────────────────────────────────
 
 
@@ -282,6 +477,8 @@ async def post_init(app):
         BotCommand("status", "Состояние офиса"),
         BotCommand("agents", "Список агентов"),
         BotCommand("set", "Сменить состояние"),
+        BotCommand("chat", "Написать агенту Claw"),
+        BotCommand("claw_status", "Статус OpenClaw Gateway"),
         BotCommand("memo", "Дневник за вчера"),
         BotCommand("health", "Проверка сервера"),
         BotCommand("help", "Справка"),
@@ -317,9 +514,14 @@ def main():
     app.add_handler(CommandHandler("set", cmd_set))
     app.add_handler(CommandHandler("memo", cmd_memo))
     app.add_handler(CommandHandler("health", cmd_health))
+    app.add_handler(CommandHandler("chat", cmd_chat))
+    app.add_handler(CommandHandler("claw_status", cmd_claw_status))
 
     # Callback для inline-кнопок
     app.add_handler(CallbackQueryHandler(callback_set_state, pattern=r"^set_state:"))
+
+    # Любой текст без команды → claw-main
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 
     log.info("Polling…")
     app.run_polling(drop_pending_updates=True)
