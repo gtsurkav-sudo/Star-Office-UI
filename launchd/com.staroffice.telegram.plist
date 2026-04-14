@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.staroffice.telegram</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/projects/Star-Office-UI/.venv/bin/python3</string>
+        <string>__HOME__/projects/Star-Office-UI/backend/telegram_bot.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/projects/Star-Office-UI/backend</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>__HOME__/projects/Star-Office-UI/.venv/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+        <key>VIRTUAL_ENV</key>
+        <string>__HOME__/projects/Star-Office-UI/.venv</string>
+        <key>OFFICE_API_URL</key>
+        <string>http://127.0.0.1:19000</string>
+        <key>TELEGRAM_BOT_TOKEN</key>
+        <string>8693039013:AAEU6oRcR8S_LZ2DILeyw9C18pw1EfxdAGU</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/staroffice-telegram.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/staroffice-telegram.err</string>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

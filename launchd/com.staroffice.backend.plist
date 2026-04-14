@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.staroffice.backend</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/projects/Star-Office-UI/backend/run.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/projects/Star-Office-UI</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>__HOME__/projects/Star-Office-UI/.venv/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+        <key>VIRTUAL_ENV</key>
+        <string>__HOME__/projects/Star-Office-UI/.venv</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/staroffice-backend.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/staroffice-backend.err</string>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>
