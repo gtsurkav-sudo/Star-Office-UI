@@ -82,7 +82,7 @@ function updateLoadingProgress() {
     loadingProgressBar.style.width = percent + '%';
   }
   if (loadingText) {
-    loadingText.textContent = `正在加载 Star 的像素办公室... ${percent}%`;
+    loadingText.textContent = `Загружаю пиксельный офис Claw... ${percent}%`;
   }
 }
 
@@ -107,6 +107,18 @@ const STATES = {
   syncing: { name: '同步备份', area: 'writing' },
   error: { name: '出错了', area: 'error' }
 };
+
+// Russian localization for agent states
+const STATE_NAMES_I18N = {
+  ru: { idle: 'Ожидание', writing: 'Пишет код', researching: 'Исследует', executing: 'Выполняет', syncing: 'Синхронизация', error: 'Ошибка' },
+  en: { idle: 'Idle', writing: 'Writing', researching: 'Researching', executing: 'Executing', syncing: 'Syncing', error: 'Error' },
+  zh: { idle: '待命', writing: '整理文档', researching: '搜索信息', executing: '执行任务', syncing: '同步备份', error: '出错了' },
+  ja: { idle: '待機', writing: '文書整理', researching: '情報検索', executing: 'タスク実行', syncing: '同期中', error: 'エラー' }
+};
+function getStateName(state) {
+  const lang = (typeof uiLang !== 'undefined') ? uiLang : 'ru';
+  return (STATE_NAMES_I18N[lang] && STATE_NAMES_I18N[lang][state]) || STATE_CONFIG[state]?.name || state;
+}
 
 const BUBBLE_TEXTS = {
   idle: [

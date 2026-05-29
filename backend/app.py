@@ -248,6 +248,21 @@ ensure_electron_standalone_snapshot()
 _INDEX_HTML_CACHE = None
 
 
+@app.route("/favicon.ico")
+def favicon_ico():
+    return send_from_directory(FRONTEND_DIR, "favicon.ico", mimetype="image/x-icon")
+
+
+@app.route("/favicon-32x32.png")
+def favicon_png():
+    return send_from_directory(FRONTEND_DIR, "favicon-32x32.png", mimetype="image/png")
+
+
+@app.route("/apple-touch-icon.png")
+def apple_touch_icon():
+    return send_from_directory(FRONTEND_DIR, "apple-touch-icon.png", mimetype="image/png")
+
+
 @app.route("/", methods=["GET"])
 def index():
     """Serve the pixel office UI with built-in version cache busting"""
